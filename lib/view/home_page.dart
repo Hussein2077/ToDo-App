@@ -5,8 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:todo/controller/cubit/cubit.dart';
 import 'package:todo/controller/cubit/states.dart';
-import 'package:todo/shared/constant.dart';
-import 'package:todo/shared/database_helper.dart';
 
 import 'package:todo/view/widgets/custom_text_form.dart';
 late Database database;
@@ -20,8 +18,7 @@ class HomePage extends StatelessWidget {
   TextEditingController taskController = TextEditingController();
   TextEditingController dateController = TextEditingController();
 
-  bool isBottomSheetShown = false;
-  IconData iconData = Icons.edit;
+
   // DataBaseHelper dataBaseHelper = DataBaseHelper();
 
   HomePage({super.key});
@@ -42,12 +39,12 @@ listener: ( context, state){},
       title: const Text('ToDo'),
     ),
     body: ConditionalBuilder(
-      condition: tasks.isNotEmpty,
+      condition: cubit.tasks.isNotEmpty,
       builder: (BuildContext context) {
         return cubit.screens[cubit.currentIndex];
       },
       fallback: (BuildContext context) {
-        return tasks.isEmpty? const Center(child: Text('There is no tasks yet!',
+        return cubit.tasks.isEmpty? const Center(child: Text('There is no tasks yet!',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 30,
@@ -58,21 +55,17 @@ listener: ( context, state){},
     ),
     floatingActionButton: FloatingActionButton(
       onPressed: () {
-        if (isBottomSheetShown) {
+        if (cubit.isBottomSheetShown) {
           if (formKey.currentState!.validate()) {
-            // dataBaseHelper
-            //     .insertDatabase(
-            //     title: taskController.text,
-            //     time: timeController.text,
-            //     data: dateController.text)
-            //     .then((value) {
-            //   Navigator.pop(context);
-            //   isBottomSheetShown = false;
-            //   //
-            //   // setState(() {
-            //   //   iconData = Icons.edit;
-            //   // });
-            // });
+                cubit.insertDatabase(
+                title: taskController.text,
+                time: timeController.text,
+                data: dateController.text)
+                .then((value) {
+              Navigator.pop(context);
+
+              cubit.changeBottonSheetBar(botton: false, icon: (Icons.edit));
+            });
           }
         } else {
           scaffoldKey.currentState!
@@ -151,20 +144,22 @@ listener: ( context, state){},
           )
               .closed
               .then((value) {
-            isBottomSheetShown = false;
+            cubit.changeBottonSheetBar(botton: false, icon: (Icons.edit));
+
 
             // setState(() {
             //   iconData = Icons.edit;
             // });
           });
-          isBottomSheetShown = true;
+          cubit.changeBottonSheetBar(botton: true, icon: (Icons.add));
+
 
           // setState(() {
           //   iconData = Icons.add;
           // });
         }
       },
-      child: Icon(iconData),
+      child: Icon(cubit.iconData),
     ),
     bottomNavigationBar: BottomNavigationBar(
       currentIndex: cubit.currentIndex,

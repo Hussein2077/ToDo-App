@@ -1,5 +1,5 @@
-
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:todo/controller/cubit/states.dart';
@@ -11,6 +11,7 @@ import '../../view/widgets/new_tasks.dart';
 
 class AppCubit extends Cubit<AppStates> {
   AppCubit() : super(IntialState());
+  List<Map>tasks=[];
 
   static AppCubit get(context) => BlocProvider.of(context);
   int currentIndex = 0;
@@ -27,13 +28,15 @@ class AppCubit extends Cubit<AppStates> {
 
   late Database database;
 
-  void createDataBase()  {
-  openDatabase('ToDo.db', version: 7,
-        onCreate: (database, version) {
-      database.execute('''
+  void createDataBase() {
+    openDatabase('ToDo.db', version: 7, onCreate: (database, version) {
+      database
+          .execute('''
           CREATE TABLE newtasks
            (id INTEGER PRIMARY KEY, title TEXT, time TEXT, date TEXT,status TEXT)
-             ''').then((value) => {debugPrint('created')}).catchError((onError) {
+             ''')
+          .then((value) => {debugPrint('created')})
+          .catchError((onError) {
             debugPrint(onError.toString());
           });
     }, onOpen: (database) {
@@ -53,9 +56,9 @@ class AppCubit extends Cubit<AppStates> {
         debugPrint(onError);
       });
     }).then((value) {
-      database=value;
+      database = value;
       emit(CreateDataBaseState());
-  });
+    });
   }
 
   Future insertDatabase({
@@ -63,17 +66,23 @@ class AppCubit extends Cubit<AppStates> {
     required String time,
     required String data,
   }) async {
-    return await database.transaction((txn) async {
+ await database.transaction((txn) async {
       txn.rawInsert('''
     INSERT INTO "newtasks" (title,time,date) VALUES ("$title","$time","$data")
     ''').then((value) {
         debugPrint('$value inserted');
+        emit(InsertDataBaseState());
+        getData(database).then((value) {
+          tasks = value;
+          emit(GetDataBaseState());
+          debugPrint(tasks.toString());
+        });
       }).catchError((onError) {});
     });
   }
 
   Future<int> deleteData() async {
-    Database? myDb =  database;
+    Database? myDb = database;
     int response = await myDb.delete('newtasks');
     debugPrint('hussein');
 
@@ -82,5 +91,12 @@ class AppCubit extends Cubit<AppStates> {
 
   Future<List<Map>> getData(database) async {
     return await database.rawQuery('SELECT * FROM newtasks');
+  }
+  bool isBottomSheetShown = false;
+  IconData iconData = Icons.edit;
+  void changeBottonSheetBar({required bool botton,required IconData icon}){
+    isBottomSheetShown=botton;
+    iconData=icon;
+    emit(ChangeBottonSheetState());
   }
 }

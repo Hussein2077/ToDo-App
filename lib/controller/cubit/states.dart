@@ -9,3 +9,4 @@ class CreateDataBaseState extends AppStates {}
 class GetDataBaseState extends AppStates {}
 
 class InsertDataBaseState extends AppStates {}
+class ChangeBottonSheetState extends AppStates{}
