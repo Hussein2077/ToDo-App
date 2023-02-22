@@ -38,21 +38,7 @@ listener: ( context, state){},
     appBar: AppBar(
       title: const Text('ToDo'),
     ),
-    body: ConditionalBuilder(
-      condition: cubit.tasks.isNotEmpty,
-      builder: (BuildContext context) {
-        return cubit.screens[cubit.currentIndex];
-      },
-      fallback: (BuildContext context) {
-        return cubit.tasks.isEmpty? const Center(child: Text('There is no tasks yet!',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 30,
-            color: Colors.teal,
-          ),
-        )) : const Center(child: CircularProgressIndicator());
-      },
-    ),
+    body: cubit.screens[cubit.currentIndex],
     floatingActionButton: FloatingActionButton(
       onPressed: () {
         if (cubit.isBottomSheetShown) {

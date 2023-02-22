@@ -4,14 +4,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:todo/controller/cubit/states.dart';
 
-import '../../shared/constant.dart';
 import '../../view/widgets/archive_tasks.dart';
 import '../../view/widgets/done_tasks.dart';
 import '../../view/widgets/new_tasks.dart';
 
 class AppCubit extends Cubit<AppStates> {
   AppCubit() : super(IntialState());
-  List<Map>tasks=[];
+  List<Map> newTasks = [];
+  List<Map> doneTasks = [];
+  List<Map> archiveTasks = [];
 
   static AppCubit get(context) => BlocProvider.of(context);
   int currentIndex = 0;
@@ -40,11 +41,7 @@ class AppCubit extends Cubit<AppStates> {
             debugPrint(onError.toString());
           });
     }, onOpen: (database) {
-      getData(database).then((value) {
-        tasks = value;
-        emit(GetDataBaseState());
-        debugPrint(tasks.toString());
-      });
+      getData(database);
     }, onUpgrade: (database, oldv, newv) async {
       return await database.execute('''
     CREATE TABLE newtasks
@@ -61,42 +58,76 @@ class AppCubit extends Cubit<AppStates> {
     });
   }
 
+  void updateData({
+    required String status,
+    required int id,
+  }) {
+    database.rawUpdate('''
+    UPDATE newtasks SET status =? WHERE id =? 
+    ''', [status, id]).then((value) {
+      getData(database);
+      emit(UpdateDataBaseState());
+    });
+  }
+
   Future insertDatabase({
     required String title,
     required String time,
     required String data,
   }) async {
- await database.transaction((txn) async {
+    await database.transaction((txn) async {
       txn.rawInsert('''
-    INSERT INTO "newtasks" (title,time,date) VALUES ("$title","$time","$data")
+    INSERT INTO "newtasks" (title,time,date,status) VALUES ("$title","$time","$data","new")
     ''').then((value) {
         debugPrint('$value inserted');
         emit(InsertDataBaseState());
-        getData(database).then((value) {
-          tasks = value;
-          emit(GetDataBaseState());
-          debugPrint(tasks.toString());
-        });
+        getData(database);
       }).catchError((onError) {});
     });
   }
 
-  Future<int> deleteData() async {
-    Database? myDb = database;
-    int response = await myDb.delete('newtasks');
-    debugPrint('hussein');
+void deleteData({
+  required int id
+}) async {
 
-    return response;
+    database.rawDelete('DELETE FROM newtasks WHERE id =?',[id])
+    .then((value) {
+      getData(database);
+      emit(DeleteDataBaseState());
+    });
+
+
   }
 
-  Future<List<Map>> getData(database) async {
-    return await database.rawQuery('SELECT * FROM newtasks');
+  getData(database) async {
+    newTasks=[];
+    doneTasks=[];
+    archiveTasks=[];
+    emit(GetDataBaseState());
+     database.rawQuery('SELECT * FROM newtasks').then((value){
+
+
+       value.forEach((element) {
+  if (element['status']=='new'){
+    newTasks.add(element);
   }
+  else if (element['status']=='done'){
+    doneTasks.add(element);
+  }else if(element['status']=='archive') {
+   archiveTasks.add(element);
+
+  }
+
+       });
+     });
+  }
+
   bool isBottomSheetShown = false;
   IconData iconData = Icons.edit;
-  void changeBottonSheetBar({required bool botton,required IconData icon}){
-    isBottomSheetShown=botton;
-    iconData=icon;
+
+  void changeBottonSheetBar({required bool botton, required IconData icon}) {
+    isBottomSheetShown = botton;
+    iconData = icon;
     emit(ChangeBottonSheetState());
   }
 }
